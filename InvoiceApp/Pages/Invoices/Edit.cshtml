@@ -1,0 +1,254 @@
+﻿@page "{id:int}"
+@model InvoiceApp.Pages.Invoices.EditModel
+@{
+    // URL'den gelen moda göre sayfanın sadece okunabilir olup olmayacağını ve başlığını belirliyoruz (Single Page mantığı)
+    bool isReadOnly = Model.Mode == "details" || Model.Mode == "delete";
+    string pageTitle = Model.Mode == "edit" ? "Edit Invoice" : (Model.Mode == "delete" ? "Delete Invoice" : "Invoice Details");
+}
+
+<h2 class="text-center mb-3">@pageTitle</h2>
+
+@if (!string.IsNullOrEmpty(Model.successMessage))
+{
+    <div class="alert alert-success alert-dismissible fade show text-center mb-3" role="alert">
+        <strong>Başarılı!</strong> @Model.successMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (Model.Mode == "delete")
+{
+    <div class="alert alert-danger text-center fw-bold mb-4" role="alert">
+        ⚠️ Bu faturayı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+    </div>
+}
+
+<form method="post" asp-route-mode="@Model.Mode" asp-route-id="@Model.Invoice.Id">
+    <input type="hidden" asp-for="Invoice.Id" />
+
+    <div asp-validation-summary="All" class="text-danger fw-bold mb-3 text-center"></div>
+
+    <div class="row g-2 mb-3">
+        <div class="col-lg-6">
+            <div class="card h-100 border-primary shadow-sm">
+                <div class="card-header bg-primary text-white fw-bold"> : : Invoice Details </div>
+                <div class="card-body bg-light">
+                    <div class="row mb-3">
+                        <label class="col-sm-4 col-form-label fw-bold"> Invoice Id</label>
+                        <div class="col-sm-8">
+                            <input class="form-control-plaintext fw-bold" readonly value="@Model.Invoice.Id" />
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-sm-4 col-form-label fw-bold"> Invoice Number</label>
+                        <div class="col-sm-8">
+                            <input asp-for="InvoiceDto.Number" class="form-control" readonly="@isReadOnly" required />
+                            <span asp-validation-for="InvoiceDto.Number" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-sm-4 col-form-label fw-bold"> Payment Status</label>
+                        <div class="col-sm-8">
+                            <select class="form-select" asp-for="InvoiceDto.Status" disabled="@isReadOnly">
+                                <option value="Pending">Pending</option>
+                                <option value="Paid">Paid</option>
+                            </select>
+                            <span asp-validation-for="InvoiceDto.Status" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-sm-4 col-form-label fw-bold"> Issue Date</label>
+                        <div class="col-sm-8">
+                            <input type="date" asp-for="InvoiceDto.IssueDate" class="form-control" readonly="@isReadOnly" required />
+                            <span asp-validation-for="InvoiceDto.IssueDate" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-sm-4 col-form-label fw-bold"> Due Date</label>
+                        <div class="col-sm-8">
+                            <input type="date" asp-for="InvoiceDto.DueDate" class="form-control" readonly="@isReadOnly" required />
+                            <span asp-validation-for="InvoiceDto.DueDate" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card h-100 border-secondary shadow-sm">
+                <div class="card-header bg-secondary text-white fw-bold"> : : Client Details </div>
+                <div class="card-body bg-light">
+                    <div class="row mb-3">
+                        <label class="col-sm-4 col-form-label fw-bold"> Client Name</label>
+                        <div class="col-sm-8">
+                            <input asp-for="InvoiceDto.ClientName" class="form-control" readonly="@isReadOnly" required />
+                            <span asp-validation-for="InvoiceDto.ClientName" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-sm-4 col-form-label fw-bold"> Email</label>
+                        <div class="col-sm-8">
+                            <input asp-for="InvoiceDto.Email" class="form-control" readonly="@isReadOnly" />
+                            <span asp-validation-for="InvoiceDto.Email" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-sm-4 col-form-label fw-bold"> Phone</label>
+                        <div class="col-sm-8">
+                            <input asp-for="InvoiceDto.Phone" class="form-control" readonly="@isReadOnly" />
+                            <span asp-validation-for="InvoiceDto.Phone" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-sm-4 col-form-label fw-bold"> Address</label>
+                        <div class="col-sm-8">
+                            <textarea asp-for="InvoiceDto.Address" class="form-control" rows="2" readonly="@isReadOnly"></textarea>
+                            <span asp-validation-for="InvoiceDto.Address" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4 border-dark shadow-sm">
+        <div class="card-header bg-dark text-white fw-bold d-flex justify-content-between align-items-center">
+            <span> : : Services Details (Fatura Kalemleri) </span>
+            @if (!isReadOnly)
+            {
+                <button type="button" class="btn btn-sm btn-success" onclick="addItem()">+ Yeni Satır</button>
+            }
+        </div>
+
+        <div class="card-body bg-light" id="itemsContainer">
+            @for (int i = 0; i < Model.InvoiceDto.Items.Count; i++)
+            {
+                <div class="row g-2 mb-2 align-items-end item-row">
+                    <div class="col-lg-4">
+                        <label class="small fw-bold">Service</label>
+                        <input class="form-control" name="InvoiceDto.Items[@i].Service" value="@Model.InvoiceDto.Items[i].Service" readonly="@isReadOnly" required />
+                    </div>
+                    <div class="col-lg-2">
+                        <label class="small fw-bold">Qty</label>
+                        <input type="number" class="form-control quantity-input" name="InvoiceDto.Items[@i].Quantity" value="@Model.InvoiceDto.Items[i].Quantity" oninput="updateTotalPrices()" readonly="@isReadOnly" required />
+                    </div>
+                    <div class="col-lg-2">
+                        <label class="small fw-bold">Price ($)</label>
+                        <input type="text" class="form-control price-input" name="InvoiceDto.Items[@i].UnitPrice" value="@Model.InvoiceDto.Items[i].UnitPrice" oninput="updateTotalPrices()" readonly="@isReadOnly" required />
+                    </div>
+                    <div class="col-lg-3">
+                        <label class="small fw-bold">Row Total</label>
+                        <input class="form-control row-total" disabled />
+                    </div>
+
+                    @if (!isReadOnly)
+                    {
+                        <div class="col-lg-1"><button type="button" class="btn btn-danger w-100" onclick="removeItem(this)">Sil</button></div>
+                    }
+                </div>
+            }
+        </div>
+        <div class="card-footer text-end">
+            <h4>Genel Toplam: <span id="grandTotal">0.00</span> $</h4>
+        </div>
+    </div>
+
+    <div class="text-center mb-5">
+        @if (Model.Mode == "edit")
+        {
+            <button type="submit" class="btn btn-primary btn-lg px-4 me-2 shadow-sm">Save Changes</button>
+            <a class="btn btn-outline-secondary btn-lg px-4 shadow-sm" asp-page="/Invoices/Index">Cancel</a>
+        }
+        else if (Model.Mode == "delete")
+        {
+            <button type="submit" class="btn btn-danger btn-lg px-4 me-2 shadow-sm">Evet, Faturayı Sil</button>
+            <a class="btn btn-outline-secondary btn-lg px-4 shadow-sm" asp-page="/Invoices/Index">İptal Et</a>
+        }
+        else
+        {
+            <a class="btn btn-secondary btn-lg px-5 shadow-sm" asp-page="/Invoices/Index">Close</a>
+        }
+    </div>
+</form>
+
+<script>
+    // Dinamik alanlardaki anlık değişiklikleri algılayıp yeni toplamı hesaplayan fonksiyon
+    function updateTotalPrices() {
+        let grandTotal = 0;
+        let rows = document.querySelectorAll('.item-row');
+
+        rows.forEach(row => {
+            let qty = parseFloat(row.querySelector('.quantity-input').value) || 0;
+            // JS tarafında ondalık ayırıcıyı nokta yapmak zorundayız
+            let priceStr = row.querySelector('.price-input').value.replace(",", ".");
+            let price = parseFloat(priceStr) || 0;
+
+            let rowTotal = qty * price;
+            row.querySelector('.row-total').value = rowTotal.toFixed(2);
+            grandTotal += rowTotal;
+        });
+
+        document.getElementById('grandTotal').innerText = grandTotal.toFixed(2);
+    }
+
+    // "Yeni Satır" butonuna tıklandığında DOM'a boş HTML inputları ekler
+    function addItem() {
+        let container = document.getElementById('itemsContainer');
+
+        // Listenin mevcut indeks sırasını bozmamak için son sayıyı indeks kabul ediyoruz
+        let index = container.querySelectorAll('.item-row').length;
+
+        let rowHtml = `
+            <div class="row g-2 mb-2 align-items-end item-row">
+                <div class="col-lg-4">
+                    <input class="form-control" name="InvoiceDto.Items[${index}].Service" placeholder="New Service" required />
+                </div>
+                <div class="col-lg-2 col-sm-3">
+                    <input type="number" class="form-control quantity-input" name="InvoiceDto.Items[${index}].Quantity" value="1" oninput="updateTotalPrices()" required />
+                </div>
+                <div class="col-lg-2 col-sm-3">
+                    <input type="text" class="form-control price-input" name="InvoiceDto.Items[${index}].UnitPrice" value="0" oninput="updateTotalPrices()" required />
+                </div>
+                <div class="col-lg-3 col-sm-4">
+                    <input class="form-control row-total text-primary fw-bold bg-white" disabled value="0.00" />
+                </div>
+                <div class="col-lg-1 col-sm-2">
+                    <button type="button" class="btn btn-danger w-100" onclick="removeItem(this)">Sil</button>
+                </div>
+            </div>
+        `;
+
+        container.insertAdjacentHTML('beforeend', rowHtml);
+        updateTotalPrices();
+    }
+
+    // HTML üzerinden bir satırı tamamen kaldırır
+    function removeItem(btn) {
+        let container = document.getElementById('itemsContainer');
+        let rows = container.querySelectorAll('.item-row');
+
+        // Kullanıcının tüm listeyi silip hata verdirmesini engelliyoruz
+        if (rows.length > 1) {
+            btn.closest('.item-row').remove();
+            reindexItems(); // Sunucu hatası almamak için sıralamayı yenile
+            updateTotalPrices();
+        } else {
+            alert("Faturada en az 1 kalem hizmet bulunmalıdır!");
+        }
+    }
+
+    // Bir satır silindiğinde (örn: Items[1] silinince) kalan satırların 'name' numaralarını ardışık olarak yeniden düzenler
+    function reindexItems() {
+        let rows = document.querySelectorAll('.item-row');
+        rows.forEach((row, index) => {
+            row.querySelectorAll('input')[0].name = `InvoiceDto.Items[${index}].Service`;
+            row.querySelectorAll('input')[1].name = `InvoiceDto.Items[${index}].Quantity`;
+            row.querySelectorAll('input')[2].name = `InvoiceDto.Items[${index}].UnitPrice`;
+        });
+    }
+
+    // Form DOM'a tam yüklendiğinde mevcut kalemlerin tutar hesaplamalarını yaparak başlatır
+    window.onload = function() {
+        updateTotalPrices();
+    };
+</script>

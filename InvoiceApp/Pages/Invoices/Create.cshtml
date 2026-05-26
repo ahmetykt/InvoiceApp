@@ -1,0 +1,215 @@
+﻿@page
+@model InvoiceApp.Pages.Invoices.CreateModel
+@{
+    ViewData["Title"] = "New Invoice";
+}
+
+<h2 class="text-center mb-3">New Invoice</h2>
+
+<form method="post">
+    <div class="row g-2 mb-3">
+        <div class="col-lg-6">
+            <div class="card h-100 border-primary shadow-sm">
+                <div class="card-header bg-primary text-white fw-bold"> : : Invoice Details </div>
+                <div class="card-body bg-light">
+                    <div class="row mb-3">
+                        <label class="col-sm-4 col-form-label fw-bold"> Invoice Number</label>
+                        <div class="col-sm-8">
+                            <input asp-for="InvoiceDto.Number" class="form-control" />
+                            <span asp-validation-for="InvoiceDto.Number" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-sm-4 col-form-label fw-bold"> Payment Status</label>
+                        <div class="col-sm-8">
+                            <select class="form-select" asp-for="InvoiceDto.Status">
+                                <option value="Pending">Pending</option>
+                                <option value="Paid">Paid</option>
+                            </select>
+                            <span asp-validation-for="InvoiceDto.Status" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-sm-4 col-form-label fw-bold"> Issue Date</label>
+                        <div class="col-sm-8">
+                            <input type="date" asp-for="InvoiceDto.IssueDate" class="form-control" required />
+                            <span asp-validation-for="InvoiceDto.IssueDate" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-sm-4 col-form-label fw-bold"> Due Date</label>
+                        <div class="col-sm-8">
+                            <input type="date" asp-for="InvoiceDto.IssueDate" class="form-control" required />
+                            <span asp-validation-for="InvoiceDto.DueDate" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card h-100 border-secondary shadow-sm">
+                <div class="card-header bg-secondary text-white fw-bold"> : : Client Details </div>
+                <div class="card-body bg-light">
+                    <div class="row mb-3">
+                        <label class="col-sm-4 col-form-label fw-bold"> Client Name</label>
+                        <div class="col-sm-8">
+                            <input asp-for="InvoiceDto.ClientName" class="form-control" />
+                            <span asp-validation-for="InvoiceDto.ClientName" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-sm-4 col-form-label fw-bold"> Email</label>
+                        <div class="col-sm-8">
+                            <input asp-for="InvoiceDto.Email" class="form-control" />
+                            <span asp-validation-for="InvoiceDto.Email" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-sm-4 col-form-label fw-bold"> Phone</label>
+                        <div class="col-sm-8">
+                            <input asp-for="InvoiceDto.Phone" class="form-control" />
+                            <span asp-validation-for="InvoiceDto.Phone" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-sm-4 col-form-label fw-bold"> Address</label>
+                        <div class="col-sm-8">
+                            <textarea asp-for="InvoiceDto.Address" class="form-control" rows="2"></textarea>
+                            <span asp-validation-for="InvoiceDto.Address" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4 border-dark shadow-sm">
+        <div class="card-header bg-dark text-white fw-bold d-flex justify-content-between align-items-center">
+            <span> : : Services Details (Fatura Kalemleri) </span>
+            <button type="button" class="btn btn-sm btn-success fw-bold" onclick="addItem()">+ Yeni Satır Ekle</button>
+        </div>
+
+        <div class="card-body bg-light" id="itemsContainer">
+            @for (int i = 0; i < Model.InvoiceDto.Items.Count; i++)
+            {
+                <div class="row g-2 mb-2 align-items-end item-row">
+                    <div class="col-lg-4">
+                        <label class="form-label fw-bold text-muted small">Service Name</label>
+                        <input class="form-control" asp-for="InvoiceDto.Items[i].Service" name="InvoiceDto.Items[@i].Service" required />
+                    </div>
+                    <div class="col-lg-2 col-sm-3">
+                        <label class="form-label fw-bold text-muted small">Quantity</label>
+                        <input type="number" class="form-control quantity-input" asp-for="InvoiceDto.Items[i].Quantity" name="InvoiceDto.Items[@i].Quantity" oninput="updateTotalPrices()" required />
+                    </div>
+                    <div class="col-lg-2 col-sm-3">
+                        <label class="form-label fw-bold text-muted small">Unit Price ($)</label>
+                        <input type="text" class="form-control price-input" asp-for="InvoiceDto.Items[i].UnitPrice" name="InvoiceDto.Items[@i].UnitPrice" oninput="updateTotalPrices()" required />
+                    </div>
+                    <div class="col-lg-3 col-sm-4">
+                        <label class="form-label fw-bold text-muted small">Row Total ($)</label>
+                        <input class="form-control row-total text-primary fw-bold bg-white" disabled value="0.00" />
+                    </div>
+                    <div class="col-lg-1 col-sm-2">
+                        <button type="button" class="btn btn-danger w-100" onclick="removeItem(this)">Sil</button>
+                    </div>
+                </div>
+            }
+        </div>
+        <div class="card-footer bg-white text-end">
+            <h4 class="mb-0">Genel Toplam: <span id="grandTotal" class="text-success fw-bold">0.00</span> $</h4>
+        </div>
+    </div>
+
+    <div class="text-center mb-5">
+        <button type="submit" class="btn btn-primary btn-lg px-5 me-2 shadow-sm"> Create Invoice </button>
+        <a class="btn btn-outline-secondary btn-lg px-5 shadow-sm" asp-page="/Invoices/Index" role="button"> Cancel </a>
+    </div>
+</form>
+
+<script>
+    // Faturadaki tüm satırları gezip Genel Toplamı dinamik olarak hesaplayan fonksiyon
+    function updateTotalPrices() {
+        let grandTotal = 0;
+        let rows = document.querySelectorAll('.item-row');
+
+        rows.forEach(row => {
+            let qty = parseFloat(row.querySelector('.quantity-input').value) || 0;
+
+            // C# virgül beklerken, JS nokta ile hesaplama yapar. Bu yüzden arayüzde virgülü noktaya çeviriyoruz.
+            let priceStr = row.querySelector('.price-input').value.replace(",", ".");
+            let price = parseFloat(priceStr) || 0;
+
+            // Satır bazlı (Miktar * Fiyat) hesaplaması
+            let rowTotal = qty * price;
+            row.querySelector('.row-total').value = rowTotal.toFixed(2);
+            grandTotal += rowTotal;
+        });
+
+        // Bulunan genel toplamı en alttaki alana yazdır
+        document.getElementById('grandTotal').innerText = grandTotal.toFixed(2);
+    }
+
+    // Kullanıcı "+ Yeni Satır Ekle" butonuna bastığında DOM'a yeni HTML satırı enjekte eder
+    function addItem() {
+        let container = document.getElementById('itemsContainer');
+
+        // Yeni eklenecek satırın C# tarafında doğru listeye eşleşmesi için mevcut satır sayısını index olarak alıyoruz
+        let index = container.querySelectorAll('.item-row').length;
+
+        let rowHtml = `
+            <div class="row g-2 mb-2 align-items-end item-row">
+                <div class="col-lg-4">
+                    <input class="form-control" name="InvoiceDto.Items[${index}].Service" placeholder="New Service" required />
+                </div>
+                <div class="col-lg-2 col-sm-3">
+                    <input type="number" class="form-control quantity-input" name="InvoiceDto.Items[${index}].Quantity" value="1" oninput="updateTotalPrices()" required />
+                </div>
+                <div class="col-lg-2 col-sm-3">
+                    <input type="text" class="form-control price-input" name="InvoiceDto.Items[${index}].UnitPrice" value="0" oninput="updateTotalPrices()" required />
+                </div>
+                <div class="col-lg-3 col-sm-4">
+                    <input class="form-control row-total text-primary fw-bold bg-white" disabled value="0.00" />
+                </div>
+                <div class="col-lg-1 col-sm-2">
+                    <button type="button" class="btn btn-danger w-100" onclick="removeItem(this)">Sil</button>
+                </div>
+            </div>
+        `;
+
+        container.insertAdjacentHTML('beforeend', rowHtml);
+        updateTotalPrices(); // Yeni satır eklendiğinde toplamı güncelle
+    }
+
+    // Kullanıcı kırmızı "Sil" butonuna bastığında çalışır
+    function removeItem(btn) {
+        let container = document.getElementById('itemsContainer');
+        let rows = container.querySelectorAll('.item-row');
+
+        // Kullanıcının faturayı tamamen boş bırakmasını engelliyoruz
+        if (rows.length > 1) {
+            btn.closest('.item-row').remove();
+
+            // Aradan satır silinirse C# tarafındaki liste index'lerinin (0, 1, 2...) kopmaması için baştan numaralandırıyoruz
+            reindexItems();
+            updateTotalPrices();
+        } else {
+            alert("Faturada en az 1 kalem hizmet bulunmalıdır!");
+        }
+    }
+
+    // Silme işleminden sonra kalan satırların 'name' niteliklerini sırayla yeniden düzenler (Örn: Items[0], Items[1])
+    function reindexItems() {
+        let rows = document.querySelectorAll('.item-row');
+        rows.forEach((row, index) => {
+            row.querySelectorAll('input')[0].name = `InvoiceDto.Items[${index}].Service`;
+            row.querySelectorAll('input')[1].name = `InvoiceDto.Items[${index}].Quantity`;
+            row.querySelectorAll('input')[2].name = `InvoiceDto.Items[${index}].UnitPrice`;
+        });
+    }
+
+    // Sayfa ilk yüklendiğinde varsayılan satırın toplamlarını ekrana yansıtmak için bir kez çalıştırıyoruz
+    window.onload = function() {
+        updateTotalPrices();
+    };
+</script>
